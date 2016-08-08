@@ -132,6 +132,11 @@ func (c TOMLLoader) Load(pathToToml, keyPass, sudoPass string) (err error) {
 			}
 		}
 
+		s.Enablerepo = v.Enablerepo
+		if len(s.Enablerepo) == 0 {
+			s.Enablerepo = d.Enablerepo
+		}
+
 		s.LogMsgAnsiColor = Colors[i%len(Colors)]
 		i++
 

@@ -275,12 +275,12 @@ type PackageInfo struct {
 	gorm.Model `json:"-"`
 	CveInfoID  uint `json:"-"`
 
-	Name    string
-	Version string
-	Release string
-
+	Name       string
+	Version    string
+	Release    string
 	NewVersion string
 	NewRelease string
+	Repository string
 }
 
 // ToStringCurrentVersion returns package name-version-release

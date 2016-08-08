@@ -195,11 +195,9 @@ func (o *redhat) checkRequiredPackagesInstalled() error {
 			return fmt.Errorf(msg)
 		}
 
-		var packName = ""
+		var packName = "yum-plugin-changelog"
 		if majorVersion < 6 {
 			packName = "yum-changelog"
-		} else {
-			packName = "yum-plugin-changelog"
 		}
 
 		cmd := "rpm -q " + packName
@@ -281,7 +279,13 @@ func (o *redhat) scanUnsecurePackages() ([]CvePacksInfo, error) {
 //TODO return whether already expired.
 func (o *redhat) scanUnsecurePackagesUsingYumCheckUpdate() (CvePacksList, error) {
 
-	cmd := "LANG=en_US.UTF-8 yum --color=never check-update"
+	cmd := "LANG=en_US.UTF-8 yum --color=never %s check-update"
+	if o.getServerInfo().Enablerepo != "" {
+		cmd = fmt.Sprintf(cmd, "--enablerepo="+o.getServerInfo().Enablerepo)
+	} else {
+		cmd = fmt.Sprintf(cmd, "")
+	}
+
 	r := o.ssh(util.PrependProxyEnv(cmd), sudo)
 	if !r.isSuccess(0, 100) {
 		//returns an exit code of 100 if there are available updates.
@@ -427,6 +431,7 @@ func (o *redhat) parseYumCheckUpdateLines(stdout string) (results models.Package
 			}
 			installed.NewVersion = candidate.NewVersion
 			installed.NewRelease = candidate.NewRelease
+			installed.Repository = candidate.Repository
 			results = append(results, installed)
 		}
 	}
@@ -446,16 +451,18 @@ func (o *redhat) parseYumCheckUpdateLine(line string) (models.PackageInfo, error
 		packName = strings.Join(strings.Split(fields[0], ".")[0:(len(splitted)-1)], ".")
 	}
 
-	fields = strings.Split(fields[1], "-")
-	if len(fields) != 2 {
+	verfields := strings.Split(fields[1], "-")
+	if len(verfields) != 2 {
 		return models.PackageInfo{}, fmt.Errorf("Unknown format: %s", line)
 	}
-	version := o.regexpReplace(fields[0], `^[0-9]+:`, "")
-	release := fields[1]
+	version := o.regexpReplace(verfields[0], `^[0-9]+:`, "")
+	release := verfields[1]
+
 	return models.PackageInfo{
 		Name:       packName,
 		NewVersion: version,
 		NewRelease: release,
+		Repository: fields[2],
 	}, nil
 }
 
@@ -579,7 +586,12 @@ func (o *redhat) getAllChangelog(packInfoList models.PackageInfoList) (stdout st
 	}
 
 	// yum update --changelog doesn't have --color option.
-	command += fmt.Sprintf(" LANG=en_US.UTF-8 yum update --changelog %s", packageNames)
+	tmpcmd := " LANG=en_US.UTF-8 yum %s --changelog update " + packageNames
+	if o.getServerInfo().Enablerepo != "" {
+		command += fmt.Sprintf(tmpcmd, "--enablerepo="+o.getServerInfo().Enablerepo)
+	} else {
+		command += fmt.Sprintf(tmpcmd, "")
+	}
 
 	r := o.ssh(command, sudo)
 	if !r.isSuccess(0, 1) {
