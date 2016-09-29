@@ -849,8 +849,8 @@ To detect the vulnerbility of Ruby on Rails v4.2.1, cpeNames needs to be set in 
     
 # Usage: Scan Docker containers
 
-It is common that keep Docker containers runnning without SSHd daemon.  
-see [Docker Blog:Why you don't need to run SSHd in your Docker containers](https://blog.docker.com/2014/06/why-you-dont-need-to-run-sshd-in-docker/)
+It is common to run Docker containers without a SSH daemon.  
+See [Docker Blog:Why you don't need to run SSHd in your Docker containers](https://blog.docker.com/2014/06/why-you-dont-need-to-run-sshd-in-docker/)
 
 Vuls scans Docker containers via `docker exec` instead of SSH.  
 For more details, see [Architecture section](https://github.com/future-architect/vuls#architecture)
